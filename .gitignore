@@ -3,6 +3,7 @@
 .*/
 
 # 2. Whitelist standard repository root files
+!.gitignore
 !README.md
 !LICENSE
 
