@@ -1,0 +1,25 @@
+# 1. Block everything in your home directory by default
+*
+.*/
+
+# 2. Whitelist standard repository root files
+!README.md
+!LICENSE
+
+# 3. Whitelist tracked dotfile directories and all files inside them
+!.config/
+!.config/wezterm/
+!.config/wezterm/**
+
+!AppData/
+!AppData/Roaming/
+!AppData/Roaming/helix/
+!AppData/Roaming/helix/**
+
+!Documents/
+!Documents/PowerShell/
+!Documents/PowerShell/**
+
+# 4. Whitelist Git core so Copilot can read your oneline history
+!.git/
+!.git/**
