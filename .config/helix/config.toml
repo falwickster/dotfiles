@@ -1,0 +1,27 @@
+# Set theme
+theme = "tokyonight_storm"
+
+[editor]
+# Show line numbers (relative numbers are great for modal navigation)
+line-number = "relative"
+# Highlight the current line
+cursorline = true
+# Render whitespace indicators
+whitespace.render = "all"
+# Show soft wrap indicators
+soft-wrap.enable = true
+
+[editor.cursor-shape]
+# Visual feedback for modal states
+normal = "block"
+insert = "bar"
+select = "underline"
+
+[editor.file-picker]
+# Hide gitignored files in the space+f file picker
+hidden = false
+
+[editor.statusline]
+# Clean status line displaying LSP status, mode, and diagnostics
+left = ["mode", "spinner", "file-name", "file-modification-indicator"]
+right = ["diagnostics", "selections", "position", "file-encoding"]
