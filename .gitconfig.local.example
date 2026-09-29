@@ -1,0 +1,6 @@
+# Copy this file to .gitconfig.local (same directory) and fill in your details.
+# .gitconfig.local is git-ignored, so it stays local to this machine and is
+# never committed to the dotfiles repo.
+[user]
+	name = Your Name
+	email = you@example.com
