@@ -19,23 +19,31 @@ compinit
 
 # --- fzf: Ctrl+R fuzzy reverse-history search ---------------------------
 # Matches the Windows profile's `Set-PsFzfOption
-# -PSReadlineChordReverseHistory 'Ctrl+r'` key-for-key: source fzf's own
-# shell integration for completion, then explicitly (re-)bind Ctrl+R to
-# the fzf history widget rather than relying on fzf's own default.
-for fzf_integration in \
-    /usr/share/doc/fzf/examples/completion.zsh \
-    /usr/share/fzf/completion.zsh \
-    /usr/share/doc/fzf/examples/key-bindings.zsh \
-    /usr/share/fzf/key-bindings.zsh
-do
-    [[ -f "$fzf_integration" ]] && source "$fzf_integration"
-done
+# -PSReadlineChordReverseHistory 'Ctrl+r'` key-for-key. Modern fzf (>=0.48,
+# what Homebrew ships) can generate its own shell integration on the fly
+# via `fzf --zsh` - no need to hunt for distro-specific static file paths
+# (which has proven unreliable: Ubuntu 24.04's old apt fzf package lists
+# completion.zsh/key-bindings.zsh in its manifest but doesn't actually ship
+# them). Fall back to known static paths for older fzf, then to a
+# dependency-free hand-rolled widget as a last resort, so Ctrl+R always
+# works regardless of how fzf ended up installed.
+if command -v fzf >/dev/null 2>&1; then
+    if fzf --zsh >/dev/null 2>&1; then
+        source <(fzf --zsh)
+    else
+        for fzf_integration in \
+            "$HOMEBREW_PREFIX/opt/fzf/shell/completion.zsh" \
+            "$HOMEBREW_PREFIX/opt/fzf/shell/key-bindings.zsh" \
+            /usr/share/doc/fzf/examples/completion.zsh \
+            /usr/share/fzf/completion.zsh \
+            /usr/share/doc/fzf/examples/key-bindings.zsh \
+            /usr/share/fzf/key-bindings.zsh
+        do
+            [[ -n "$fzf_integration" && -f "$fzf_integration" ]] && source "$fzf_integration"
+        done
+    fi
+fi
 
-# Some distro fzf packages (e.g. Ubuntu 24.04's apt package) don't actually
-# ship the completion.zsh/key-bindings.zsh files above despite listing them
-# in the package manifest, so fzf-history-widget may not exist even though
-# fzf itself is installed. Define a minimal, dependency-free fallback widget
-# in that case so Ctrl+R always works.
 if command -v fzf >/dev/null 2>&1 && ! (( ${+widgets[fzf-history-widget]} )); then
     fzf-history-widget() {
         local selected
@@ -53,11 +61,12 @@ fi
 
 # --- zsh-autosuggestions: ghost-text history suggestions ----------------
 for autosuggestions_init in \
+    "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" \
     /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
     /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh \
     "$HOME/.local/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
 do
-    if [[ -f "$autosuggestions_init" ]]; then
+    if [[ -n "$autosuggestions_init" && -f "$autosuggestions_init" ]]; then
         source "$autosuggestions_init"
         break
     fi
@@ -66,11 +75,12 @@ ZSH_AUTOSUGGEST_STRATEGY=(history)
 
 # --- zsh-syntax-highlighting (must be sourced near the end of the file) -
 for syntax_highlighting_init in \
+    "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" \
     /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
     /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh \
     "$HOME/.local/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 do
-    if [[ -f "$syntax_highlighting_init" ]]; then
+    if [[ -n "$syntax_highlighting_init" && -f "$syntax_highlighting_init" ]]; then
         source "$syntax_highlighting_init"
         break
     fi
