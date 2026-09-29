@@ -1,0 +1,32 @@
+# This is Git's per-user configuration file.
+
+# Note: [user] name/email is intentionally NOT tracked here (personal info).
+# It lives in the untracked .gitconfig.local file next to this one (same
+# directory as this config). If .gitconfig.local doesn't exist, git silently
+# skips this include - no error - so re-cloning/syncing this repo elsewhere
+# won't break, you'll just be prompted by git to set user.name/user.email
+# the first time you commit. See .gitconfig.local.example for the format.
+[include]
+	path = .gitconfig.local
+
+# Note: [safe] "directory" entries are intentionally NOT tracked here.
+# They point at machine-specific local checkout paths and should be
+# added locally per-machine (git will prompt/error and tell you how),
+# not synced via dotfiles.
+
+[core]
+	editor = hx
+	pager = delta
+
+[interactive]
+	diffFilter = delta --color-only
+
+[delta]
+	navigate = true
+	line-numbers = true
+
+[merge]
+	conflictstyle = diff3
+
+[diff]
+	colorMoved = default
