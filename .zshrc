@@ -30,7 +30,24 @@ for fzf_integration in \
 do
     [[ -f "$fzf_integration" ]] && source "$fzf_integration"
 done
-if command -v fzf >/dev/null 2>&1 && (( $+widgets[fzf-history-widget] )); then
+
+# Some distro fzf packages (e.g. Ubuntu 24.04's apt package) don't actually
+# ship the completion.zsh/key-bindings.zsh files above despite listing them
+# in the package manifest, so fzf-history-widget may not exist even though
+# fzf itself is installed. Define a minimal, dependency-free fallback widget
+# in that case so Ctrl+R always works.
+if command -v fzf >/dev/null 2>&1 && ! (( ${+widgets[fzf-history-widget]} )); then
+    fzf-history-widget() {
+        local selected
+        selected="$(fc -rl 1 | fzf --tac --no-sort -q "$LBUFFER" | sed -E 's/^[[:space:]]*[0-9]+[[:space:]]+//')"
+        if [[ -n "$selected" ]]; then
+            LBUFFER="$selected"
+        fi
+        zle reset-prompt
+    }
+    zle -N fzf-history-widget
+fi
+if command -v fzf >/dev/null 2>&1 && (( ${+widgets[fzf-history-widget]} )); then
     bindkey '^R' fzf-history-widget
 fi
 
