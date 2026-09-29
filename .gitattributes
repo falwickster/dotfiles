@@ -1,0 +1,5 @@
+# Linux-path dotfiles must always use LF endings, regardless of the
+# committing machine's core.autocrlf setting, since they're checked out
+# directly into $HOME on Linux (zsh/lazygit/helix don't tolerate CRLF).
+.zshrc text eol=lf
+.config/** text eol=lf
