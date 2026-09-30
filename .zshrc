@@ -13,6 +13,14 @@ setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_SPACE
 setopt HIST_REDUCE_BLANKS
 
+# --- tmux: auto-start a new session on every interactive login shell ----
+# Guarded so it only fires for interactive shells, never re-enters when
+# already inside tmux (e.g. a pane spawning a nested shell), and never
+# fires for non-interactive contexts (scp, VS Code remote exec, etc.).
+if [[ -z "$TMUX" && -o interactive ]] && command -v tmux >/dev/null 2>&1; then
+    exec tmux
+fi
+
 # --- Completion ----------------------------------------------------------
 autoload -Uz compinit
 compinit
