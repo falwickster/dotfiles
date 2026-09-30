@@ -94,6 +94,31 @@ do
     fi
 done
 
+# --- eza: prettier `ls` --------------------------------------------------
+if command -v eza >/dev/null 2>&1; then
+    alias ls='eza --icons --group-directories-first'
+    alias ll='eza -l --icons --group-directories-first --git'
+    alias la='eza -la --icons --group-directories-first --git'
+    alias lt='eza --tree --icons --group-directories-first'
+fi
+
+# --- yazi: terminal file manager, cd-on-quit wrapper ---------------------
+# Standard yazi shell integration: `y` opens yazi, and on quit changes the
+# shell's cwd to whatever directory yazi was last in (via a temp
+# --cwd-file), instead of leaving you back where you started.
+if command -v yazi >/dev/null 2>&1; then
+    function y() {
+        local tmp
+        tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
+        yazi "$@" --cwd-file="$tmp"
+        local cwd
+        if cwd="$(cat -- "$tmp")" && [[ -n "$cwd" && "$cwd" != "$PWD" ]]; then
+            cd -- "$cwd"
+        fi
+        rm -f -- "$tmp"
+    }
+fi
+
 # --- dotfiles sync helper -------------------------------------------------
 # Intentionally locked down to read-only / sync operations, mirroring the
 # PowerShell profile's `dotfiles` function. It exists purely to pull
