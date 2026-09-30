@@ -20,6 +20,13 @@ config.default_prog = { "pwsh" }
 
 config.color_scheme = "tokyonight_storm"
 config.window_background_opacity = 0.9
+
+-- Pinned explicitly (rather than relying on WezTerm's built-in fallback
+-- font) so WezTerm and Alacritty (see
+-- ../../AppData/Roaming/alacritty/alacritty.toml) render text and Nerd
+-- Font glyphs identically.
+config.font = wezterm.font("JetBrainsMono Nerd Font Mono")
+config.font_size = 11
 config.window_decorations = "RESIZE"
 config.window_close_confirmation = "AlwaysPrompt"
 config.scrollback_lines = 3000

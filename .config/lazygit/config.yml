@@ -3,3 +3,10 @@ gui:
 os:
   editCommand: 'hx'
   editCommandTemplate: '{{editor}} {{filename}}:{{line}}'
+  # lazygit's `e` (edit) keybinding already uses editCommand above and
+  # correctly opens hx. Its separate `o` (openFile) keybinding instead
+  # defaults to `xdg-open`, which under WSL routes through wslu/wslview to
+  # Windows' default file handler - usually Notepad, not Helix. Override it
+  # here so `o` also opens the file in Helix instead of falling through to
+  # Windows.
+  open: 'hx {{filename}}'
