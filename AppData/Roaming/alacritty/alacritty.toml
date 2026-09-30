@@ -1,0 +1,73 @@
+# alacritty.toml - checked out to %APPDATA%\alacritty\alacritty.toml by
+# the dotfiles bare-repo workflow (see README.md).
+#
+# Installed alongside WezTerm (see ../../.config/wezterm/wezterm.lua), not
+# as a replacement - both terminals are kept side by side until Alacritty
+# has been fully evaluated. This config is intentionally visuals-only:
+# it aims to match WezTerm's look (tokyonight_storm palette, 0.9 window
+# opacity, same Nerd Font/size) without reimplementing any of WezTerm's
+# extra Lua-driven functionality (custom tab bar, workspace/cwd/clock
+# status line, mouse-copy bindings). tmux (already installed and
+# configured, see ../../.config/tmux/tmux.conf) already owns
+# multiplexing/status-bar duties, so Alacritty stays a lean, fast
+# "just render the tmux session" terminal.
+#
+# NOTE: Alacritty has no built-in Nerd Font glyph fallback (unlike
+# WezTerm), so a real Nerd Font must be installed for glyphs below to
+# render correctly - see scripts/Install-NerdFont.ps1 (JetBrainsMono
+# Nerd Font, installed by default via Bootstrap.ps1).
+
+[window]
+opacity = 0.9
+# Closest available match to WezTerm's `window_decorations = "RESIZE"`
+# (no title bar, keep a resizable border): Alacritty has no exact
+# equivalent on Windows, so "Buttonless" (keeps title bar/resize border,
+# hides the min/max/close buttons) is used as the nearest analog.
+decorations = "Buttonless"
+
+[scrolling]
+history = 3000
+
+[font]
+size = 11
+
+[font.normal]
+family = "JetBrainsMono Nerd Font Mono"
+style = "Regular"
+
+[font.bold]
+family = "JetBrainsMono Nerd Font Mono"
+style = "Bold"
+
+[font.italic]
+family = "JetBrainsMono Nerd Font Mono"
+style = "Italic"
+
+[shell]
+program = "pwsh"
+
+# tokyonight_storm palette, matching WezTerm's `color_scheme =
+# "tokyonight_storm"`.
+[colors.primary]
+background = "#24283b"
+foreground = "#c0caf5"
+
+[colors.normal]
+black = "#1d202f"
+red = "#f7768e"
+green = "#9ece6a"
+yellow = "#e0af68"
+blue = "#7aa2f7"
+magenta = "#bb9af7"
+cyan = "#7dcfff"
+white = "#a9b1d6"
+
+[colors.bright]
+black = "#414868"
+red = "#ff899d"
+green = "#9ece6a"
+yellow = "#e0af68"
+blue = "#7aa2f7"
+magenta = "#bb9af7"
+cyan = "#7dcfff"
+white = "#c0caf5"
