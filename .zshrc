@@ -133,3 +133,27 @@ dotfiles() {
     fi
     git --git-dir="$HOME/.dotfiles.git" --work-tree="$HOME" "$@"
 }
+
+# --- copilot_here: sandboxed Copilot CLI container wrapper --------------
+# This block is pre-seeded here (rather than left for copilot_here's own
+# installer to inject at runtime) so the dotfiles bare-repo checkout in
+# install-dotfiles.sh never has to race it: if the installer created this
+# file's marker block first, the checkout would see an untracked ~/.zshrc
+# that doesn't match the tracked one and refuse to proceed. The content
+# below matches upstream's generated block byte-for-byte
+# (github.com/GordonBeeming/copilot_here), so when
+# scripts/install-copilot-here.sh runs the official installer afterwards,
+# it rewrites this exact same block - a no-op diff, so ~/.zshrc stays
+# clean under `dotfiles status`.
+# >>> copilot_here >>>
+# Ensure user bin directory is on PATH
+if [ -d "$HOME/.local/bin" ]; then
+  case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) export PATH="$HOME/.local/bin:$PATH" ;;
+  esac
+fi
+if [ -f "$HOME/.copilot_here.sh" ]; then
+  source "$HOME/.copilot_here.sh"
+fi
+# <<< copilot_here <<<
