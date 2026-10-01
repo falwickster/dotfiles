@@ -19,11 +19,15 @@
 
 [window]
 opacity = 0.9
-# Closest available match to WezTerm's `window_decorations = "RESIZE"`
-# (no title bar, keep a resizable border): Alacritty has no exact
-# equivalent on Windows, so "Buttonless" (keeps title bar/resize border,
-# hides the min/max/close buttons) is used as the nearest analog.
-decorations = "Buttonless"
+# WezTerm's `window_decorations = "RESIZE"` hides the title bar but keeps
+# a resizable border. Alacritty has no exact equivalent on Windows: its
+# "Buttonless"/"Transparent" decoration values are macOS-only (no effect
+# here, falling back to "Full" - title bar, borders, and buttons all
+# shown). "None" is the only Windows-compatible value that actually
+# removes the topbar, so it's used here as the closest match to WezTerm's
+# borderless look, even though it also drops the resizable border that
+# WezTerm's RESIZE mode keeps.
+decorations = "None"
 
 [scrolling]
 history = 3000
