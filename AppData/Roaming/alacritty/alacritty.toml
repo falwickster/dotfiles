@@ -47,7 +47,7 @@ style = "Bold"
 family = "JetBrainsMono Nerd Font Mono"
 style = "Italic"
 
-[shell]
+[terminal.shell]
 program = "pwsh"
 
 # tokyonight_storm palette, matching WezTerm's `color_scheme =
