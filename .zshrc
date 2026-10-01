@@ -13,6 +13,56 @@ setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_SPACE
 setopt HIST_REDUCE_BLANKS
 
+# --- Welcome banner + manual-setup reminders -----------------------------
+# Shown once per actual login/terminal (same guard as the tmux auto-start
+# below, and must run *before* it - `exec tmux` replaces this shell
+# process, so nothing after that line would ever run). Not shown again
+# when tmux spawns new panes/windows, since those inherit $TMUX.
+if [[ -z "$TMUX" && -o interactive ]]; then
+    command -v fastfetch >/dev/null 2>&1 && fastfetch
+
+    # Nags for the handful of one-time, interactive steps nothing in
+    # Ubuntu-Setup can safely automate (they need credentials, network, or
+    # a TTY). Every check is live (no "dismiss once" flag file), so a
+    # reminder disappears for good the moment its underlying condition is
+    # actually fixed. Each remote check is capped with `timeout` so a
+    # flaky/offline network never hangs shell startup.
+    __login_reminders=()
+
+    if command -v gh >/dev/null 2>&1; then
+        if ! timeout 3 gh auth status >/dev/null 2>&1; then
+            __login_reminders+=("GitHub CLI not authenticated -- run: gh auth login")
+        elif ! timeout 3 gh auth status 2>&1 | grep -q "'copilot'"; then
+            __login_reminders+=("GitHub CLI missing Copilot scopes (needed by copilot_here) -- run: gh auth refresh -h github.com -s copilot,read:packages")
+        fi
+    fi
+
+    if command -v az >/dev/null 2>&1; then
+        if ! timeout 3 az account show >/dev/null 2>&1; then
+            __login_reminders+=("Azure CLI not authenticated -- run: az login")
+        fi
+    fi
+
+    if command -v podman >/dev/null 2>&1; then
+        if [[ ! -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock" ]]; then
+            __login_reminders+=("Podman API service not running -- run: brew services start podman")
+        fi
+    fi
+
+    if [[ ! -f "$HOME/.gitconfig.local" ]]; then
+        __login_reminders+=("Git identity not set -- run: cp ~/.gitconfig.local.example ~/.gitconfig.local && hx ~/.gitconfig.local")
+    fi
+
+    if (( ${#__login_reminders[@]} > 0 )); then
+        echo ""
+        echo "⚠️  Manual setup still needed:"
+        for __login_reminder in "${__login_reminders[@]}"; do
+            echo "   - $__login_reminder"
+        done
+    fi
+    unset __login_reminders __login_reminder
+fi
+
 # --- tmux: auto-start a new session on every interactive login shell ----
 # Guarded so it only fires for interactive shells, never re-enters when
 # already inside tmux (e.g. a pane spawning a nested shell), and never
