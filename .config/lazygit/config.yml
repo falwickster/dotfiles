@@ -3,10 +3,12 @@ gui:
 os:
   editCommand: 'hx'
   editCommandTemplate: '{{editor}} {{filename}}:{{line}}'
-  # lazygit's `e` (edit) keybinding already uses editCommand above and
-  # correctly opens hx. Its separate `o` (openFile) keybinding instead
-  # defaults to `xdg-open`, which under WSL routes through wslu/wslview to
-  # Windows' default file handler - usually Notepad, not Helix. Override it
-  # here so `o` also opens the file in Helix instead of falling through to
-  # Windows.
-  open: 'hx {{filename}}'
+# lazygit's `o` (openFile) keybinding defaults to `xdg-open`, which under
+# WSL routes through wslu/wslview to launch a Windows process - this
+# reliably freezes lazygit's TUI. Overriding os.open (e.g. to `hx
+# {{filename}}`) didn't fix it, so the keybinding is disabled outright
+# instead: `e` (edit, via editCommand above) already opens files in Helix
+# and is the supported way to open a file from lazygit here.
+keybinding:
+  files:
+    openFile: '<disabled>'
