@@ -14,11 +14,14 @@ setopt HIST_IGNORE_SPACE
 setopt HIST_REDUCE_BLANKS
 
 # --- Welcome banner + manual-setup reminders -----------------------------
-# Shown once per actual login/terminal (same guard as the tmux auto-start
-# below, and must run *before* it - `exec tmux` replaces this shell
-# process, so nothing after that line would ever run). Not shown again
-# when tmux spawns new panes/windows, since those inherit $TMUX.
-if [[ -z "$TMUX" && -o interactive ]]; then
+# Defined as a function (rather than run inline here) so it can be invoked
+# *inside* the first tmux pane by the tmux auto-start block below, instead
+# of before `exec tmux` runs. tmux switches to its own alternate screen the
+# moment it takes over the terminal, which would otherwise hide/clear
+# anything printed beforehand - running this from inside the tmux pane
+# keeps it actually visible. Never called again for tmux's own
+# new panes/windows (see guard below), only once per real login/terminal.
+__print_login_banner() {
     command -v fastfetch >/dev/null 2>&1 && fastfetch
 
     # Nags for the handful of one-time, interactive steps nothing in
@@ -27,7 +30,7 @@ if [[ -z "$TMUX" && -o interactive ]]; then
     # reminder disappears for good the moment its underlying condition is
     # actually fixed. Each remote check is capped with `timeout` so a
     # flaky/offline network never hangs shell startup.
-    __login_reminders=()
+    local __login_reminders=()
 
     if command -v gh >/dev/null 2>&1; then
         if ! timeout 3 gh auth status >/dev/null 2>&1; then
@@ -60,16 +63,45 @@ if [[ -z "$TMUX" && -o interactive ]]; then
             echo "   - $__login_reminder"
         done
     fi
-    unset __login_reminders __login_reminder
-fi
+}
 
 # --- tmux: auto-start a new session on every interactive login shell ----
 # Guarded so it only fires for interactive shells, never re-enters when
 # already inside tmux (e.g. a pane spawning a nested shell), and never
 # fires for non-interactive contexts (scp, VS Code remote exec, etc.).
-if [[ -z "$TMUX" && -o interactive ]] && command -v tmux >/dev/null 2>&1; then
-    exec tmux
+#
+# When tmux is available, the *first* session is launched with an explicit
+# shell command (instead of just `exec tmux`) that prints the banner from
+# inside tmux's own screen, then execs a normal interactive zsh for actual
+# use. The inner `zsh -ic` shell already has $TMUX set (tmux sets it for
+# every pane it spawns, including this initial one), so when it sources
+# this very .zshrc, this whole block is skipped - no recursion, and the
+# banner isn't re-printed. Any *later* panes/windows (opened via tmux's own
+# prefix bindings) just start a plain default shell with $TMUX already set,
+# so neither this block nor the banner fires for them either - the banner
+# truly only ever runs once per real login.
+if [[ -z "$TMUX" && -o interactive ]]; then
+    if command -v tmux >/dev/null 2>&1; then
+        exec tmux new-session 'zsh -ic "__print_login_banner; exec zsh"'
+    else
+        __print_login_banner
+    fi
 fi
+
+# --- Word-jump keybindings (Ctrl+Left/Right) -----------------------------
+# Without these, xterm-compatible terminals (e.g. WezTerm) send an
+# escape sequence for Ctrl+Left/Right that zsh doesn't bind to anything by
+# default, so it gets inserted into the prompt as literal text instead of
+# moving the cursor a word at a time. Covers the handful of encodings
+# actually seen in practice (tmux's `xterm-keys on`, set in tmux.conf,
+# ensures the first/most common form below reaches zsh unmangled even
+# through tmux).
+bindkey '^[[1;5C' forward-word
+bindkey '^[[1;5D' backward-word
+bindkey '^[[5C'   forward-word
+bindkey '^[[5D'   backward-word
+bindkey '^[Oc'    forward-word
+bindkey '^[Od'    backward-word
 
 # --- Completion ----------------------------------------------------------
 autoload -Uz compinit

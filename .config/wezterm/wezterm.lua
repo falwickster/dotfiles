@@ -22,9 +22,8 @@ config.color_scheme = "tokyonight_storm"
 config.window_background_opacity = 0.9
 
 -- Pinned explicitly (rather than relying on WezTerm's built-in fallback
--- font) so WezTerm and Alacritty (see
--- ../../AppData/Roaming/alacritty/alacritty.toml) render text and Nerd
--- Font glyphs identically.
+-- font) for consistently crisp rendering of Nerd Font glyphs (tmux status
+-- icons, eza/shell prompt icons, etc.) instead of the fallback.
 config.font = wezterm.font("JetBrainsMono Nerd Font Mono")
 config.font_size = 11
 config.window_decorations = "RESIZE"
@@ -48,7 +47,39 @@ config.mouse_bindings = {
 
 -- Keys
 -- Leaning on WezTerm's default keybindings (no custom LEADER prefix); see
--- https://wezfurlong.org/wezterm/config/default-keys.html for the full list.
+-- https://wezterm.org/config/default-keys.html for the full list. Tab
+-- keybindings (new/close/switch tab, etc.) are kept as-is - useful as an
+-- extra layer on top of tmux, and verified not to collide with tmux's own
+-- keymap (tmux's root/no-prefix table is mouse-bindings-only, and its
+-- prefix-table Ctrl+Arrow resize-pane bindings require the Ctrl+b prefix
+-- first, so they never fire on a bare keypress).
+--
+-- Pane/split keybindings are disabled below, though: tmux is already the
+-- single source of truth for multiplexing (panes, splits), so WezTerm's
+-- own pane/split defaults would just be redundant/confusing (nested
+-- splits, two different "add a pane" gestures, etc.). Each entry below
+-- undoes exactly one default assignment (see
+-- https://wezterm.org/config/lua/keyassignment/DisableDefaultAssignment.html)
+-- and lets the keypress fall through to tmux/the shell instead.
+config.keys = {
+  { key = "\"", mods = "CTRL|ALT", action = act.DisableDefaultAssignment }, -- SplitVertical
+  { key = "\"", mods = "CTRL|SHIFT|ALT", action = act.DisableDefaultAssignment }, -- SplitVertical
+  { key = "'", mods = "CTRL|ALT", action = act.DisableDefaultAssignment }, -- SplitVertical (raw apostrophe key)
+  { key = "'", mods = "CTRL|SHIFT|ALT", action = act.DisableDefaultAssignment }, -- SplitVertical (raw apostrophe key + shift)
+  { key = "%", mods = "CTRL|ALT", action = act.DisableDefaultAssignment }, -- SplitHorizontal
+  { key = "%", mods = "CTRL|SHIFT|ALT", action = act.DisableDefaultAssignment }, -- SplitHorizontal
+  { key = "5", mods = "CTRL|ALT", action = act.DisableDefaultAssignment }, -- SplitHorizontal (raw 5 key)
+  { key = "5", mods = "CTRL|SHIFT|ALT", action = act.DisableDefaultAssignment }, -- SplitHorizontal (raw 5 key + shift)
+  { key = "LeftArrow", mods = "CTRL|SHIFT|ALT", action = act.DisableDefaultAssignment }, -- AdjustPaneSize Left
+  { key = "RightArrow", mods = "CTRL|SHIFT|ALT", action = act.DisableDefaultAssignment }, -- AdjustPaneSize Right
+  { key = "UpArrow", mods = "CTRL|SHIFT|ALT", action = act.DisableDefaultAssignment }, -- AdjustPaneSize Up
+  { key = "DownArrow", mods = "CTRL|SHIFT|ALT", action = act.DisableDefaultAssignment }, -- AdjustPaneSize Down
+  { key = "LeftArrow", mods = "CTRL|SHIFT", action = act.DisableDefaultAssignment }, -- ActivatePaneDirection Left
+  { key = "RightArrow", mods = "CTRL|SHIFT", action = act.DisableDefaultAssignment }, -- ActivatePaneDirection Right
+  { key = "UpArrow", mods = "CTRL|SHIFT", action = act.DisableDefaultAssignment }, -- ActivatePaneDirection Up
+  { key = "DownArrow", mods = "CTRL|SHIFT", action = act.DisableDefaultAssignment }, -- ActivatePaneDirection Down
+  { key = "Z", mods = "CTRL|SHIFT", action = act.DisableDefaultAssignment }, -- TogglePaneZoomState
+}
 
 -- Tab bar
 -- I don't like the look of "fancy" tab bar
