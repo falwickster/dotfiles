@@ -1,0 +1,11 @@
+# Copy this file to ~/.azure-devops.local (same directory as
+# .gitconfig.local) and replace the placeholder below with your Azure
+# DevOps organization name (e.g. the "contoso" in
+# https://dev.azure.com/contoso).
+#
+# This file is NOT deployed by install-dotfiles.sh's bare-repo checkout
+# and is never committed - it's read directly from $HOME by
+# scripts/install-azure-devops-mcp.sh, the same way .gitconfig.local is
+# read directly by git itself. Lines starting with # and blank lines are
+# ignored; the first remaining line is used as the organization name.
+your-ado-org-name

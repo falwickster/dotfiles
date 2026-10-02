@@ -46,6 +46,12 @@ __print_login_banner() {
         fi
     fi
 
+    if command -v copilot >/dev/null 2>&1 || [[ -x "$HOME/.local/bin/copilot" ]]; then
+        if [[ ! -f "$HOME/.azure-devops.local" ]]; then
+            __login_reminders+=("Azure DevOps org not configured for the Copilot MCP server -- run: cp ~/dotfiles/.azure-devops.local.example ~/.azure-devops.local && hx ~/.azure-devops.local, then re-run scripts/install-azure-devops-mcp.sh")
+        fi
+    fi
+
     if command -v podman >/dev/null 2>&1; then
         if [[ ! -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock" ]]; then
             __login_reminders+=("Podman API service not running -- run: brew services start podman")
