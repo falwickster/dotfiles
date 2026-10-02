@@ -1,0 +1,15 @@
+#!/bin/sh
+# Global commit-msg hook: rejects any commit that credits GitHub Copilot
+# (or any AI assistant) as a co-author/contributor. Installed for every
+# repo via `core.hooksPath` (see install-git-hooks.sh /
+# Install-GitHooks.ps1) rather than per-repo, so it can't be bypassed by
+# just cloning a fresh repo.
+msg_file="$1"
+
+if grep -Eiq '^(Co-authored-by|Signed-off-by):.*copilot' "$msg_file"; then
+    echo "error: commit message credits Copilot as a co-author/contributor." >&2
+    echo "       Remove that trailer (e.g. 'Co-authored-by: Copilot ...') and commit again." >&2
+    exit 1
+fi
+
+exit 0
