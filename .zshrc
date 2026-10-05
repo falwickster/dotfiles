@@ -18,8 +18,6 @@ setopt HIST_REDUCE_BLANKS
 # re-invoke manually if needed. Called once below for every interactive
 # login shell.
 __print_login_banner() {
-    command -v fastfetch >/dev/null 2>&1 && fastfetch
-
     # Nags for the handful of one-time, interactive steps nothing in
     # Ubuntu-Setup can safely automate (they need credentials, network, or
     # a TTY). Every check is live (no "dismiss once" flag file), so a
@@ -271,5 +269,43 @@ if command -v copilot_here >/dev/null 2>&1; then
     # installed per-project as usual), so this just aliases the base image.
     copilot_ts() {
         copilot_here "$@"
+    }
+
+    # Azure DevOps MCP tools inside the sandbox - see
+    # scripts/set-azure-devops-pat-secret.sh and
+    # scripts/generate-copilot-here-ado-mcp-config.sh. The host-side
+    # `--authentication azcli` MCP registration (install-azure-devops-mcp.sh)
+    # doesn't work in-container (no `az` binary, no ~/.azure token cache), so
+    # this injects a PAT-based MCP config directly into the containerized
+    # Copilot CLI session via copilot_here's own `--additional-mcp-config`
+    # flag, with the PAT itself supplied at runtime from a Podman secret
+    # (never mounted, never in an env file). Only works in standard
+    # (non-Airlock) mode: Airlock mode drops unrecognized SANDBOX_FLAGS like
+    # --secret.
+    __copilot_ado_run() {
+        local runner="$1"
+        shift
+        local ado_mcp_config="$HOME/.config/copilot_here/azure-devops-mcp.json"
+        local ado_secret="azure-devops-pat"
+
+        if [[ ! -f "$ado_mcp_config" ]]; then
+            echo "❌ ${ado_mcp_config} not found. Run: ./scripts/generate-copilot-here-ado-mcp-config.sh" >&2
+            return 1
+        fi
+        if command -v podman >/dev/null 2>&1 && ! podman secret inspect "$ado_secret" >/dev/null 2>&1; then
+            echo "❌ Podman secret '${ado_secret}' not found. Run: ./scripts/set-azure-devops-pat-secret.sh" >&2
+            return 1
+        fi
+
+        SANDBOX_FLAGS="--secret ${ado_secret},type=env,target=PERSONAL_ACCESS_TOKEN ${SANDBOX_FLAGS:-}" \
+            "$runner" --additional-mcp-config "@${ado_mcp_config}" "$@"
+    }
+
+    copilot_ado() {
+        __copilot_ado_run copilot_here "$@"
+    }
+
+    copilot_ado_yolo() {
+        __copilot_ado_run copilot_yolo "$@"
     }
 fi
