@@ -14,13 +14,9 @@ setopt HIST_IGNORE_SPACE
 setopt HIST_REDUCE_BLANKS
 
 # --- Welcome banner + manual-setup reminders -----------------------------
-# Defined as a function (rather than run inline here) so it can be invoked
-# *inside* the first tmux pane by the tmux auto-start block below, instead
-# of before `exec tmux` runs. tmux switches to its own alternate screen the
-# moment it takes over the terminal, which would otherwise hide/clear
-# anything printed beforehand - running this from inside the tmux pane
-# keeps it actually visible. Never called again for tmux's own
-# new panes/windows (see guard below), only once per real login/terminal.
+# Defined as a function (rather than run inline here) so it's easy to
+# re-invoke manually if needed. Called once below for every interactive
+# login shell.
 __print_login_banner() {
     command -v fastfetch >/dev/null 2>&1 && fastfetch
 
@@ -71,27 +67,12 @@ __print_login_banner() {
     fi
 }
 
-# --- tmux: auto-start a new session on every interactive login shell ----
-# Guarded so it only fires for interactive shells, never re-enters when
-# already inside tmux (e.g. a pane spawning a nested shell), and never
-# fires for non-interactive contexts (scp, VS Code remote exec, etc.).
-#
-# When tmux is available, the *first* session is launched with an explicit
-# shell command (instead of just `exec tmux`) that prints the banner from
-# inside tmux's own screen, then execs a normal interactive zsh for actual
-# use. The inner `zsh -ic` shell already has $TMUX set (tmux sets it for
-# every pane it spawns, including this initial one), so when it sources
-# this very .zshrc, this whole block is skipped - no recursion, and the
-# banner isn't re-printed. Any *later* panes/windows (opened via tmux's own
-# prefix bindings) just start a plain default shell with $TMUX already set,
-# so neither this block nor the banner fires for them either - the banner
-# truly only ever runs once per real login.
-if [[ -z "$TMUX" && -o interactive ]]; then
-    if command -v tmux >/dev/null 2>&1; then
-        exec tmux new-session 'zsh -ic "__print_login_banner; exec zsh"'
-    else
-        __print_login_banner
-    fi
+# --- Login banner: print once per interactive shell ----------------------
+# tmux is installed but not auto-started - run it manually (`tmux`) when
+# you want it. Skipped for non-interactive contexts (scp, VS Code remote
+# exec, etc.).
+if [[ -o interactive ]]; then
+    __print_login_banner
 fi
 
 # --- Word-jump keybindings (Ctrl+Left/Right) -----------------------------
