@@ -245,3 +245,31 @@ if [ -f "$HOME/.copilot_here.sh" ]; then
   source "$HOME/.copilot_here.sh"
 fi
 # <<< copilot_here <<<
+
+# --- copilot_here: project-type convenience wrappers --------------------
+# Thin pass-through wrappers around copilot_here so common dev container
+# profiles don't need to be remembered/typed as flags every time.
+if command -v copilot_here >/dev/null 2>&1; then
+    # .NET -- base image's .NET variant ships all of .NET 8/9/10 SDKs.
+    copilot_dotnet() {
+        copilot_here --dotnet "$@"
+    }
+
+    # Azure Functions (TypeScript) - no official copilot_here image variant
+    # exists for this, so this points --image at Microsoft's own Azure
+    # Functions Node image (func CLI + Node 20 preinstalled) instead of the
+    # Node-only base image. NOTE: this custom image's compatibility with
+    # copilot_here's CLI-injection mechanism is unverified/untested -
+    # upstream only guarantees its own listed variants. Fall back to plain
+    # `copilot_here` (base Node image) if you hit issues.
+    copilot_azfunc_ts() {
+        copilot_here --image mcr.microsoft.com/azure-functions/node:4-node20-core-tools "$@"
+    }
+
+    # TypeScript - the base image already ships Node.js + npm,
+    # which is all Express + TypeScript development needs (tsc/ts-node
+    # installed per-project as usual), so this just aliases the base image.
+    copilot_ts() {
+        copilot_here "$@"
+    }
+fi
