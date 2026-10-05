@@ -1,0 +1,11 @@
+# Global line-ending normalization, applied to every repository on this
+# machine via `core.attributesFile` (see .gitconfig in this repo). This
+# file lives at $HOME, outside any individual repo's working tree, so it
+# can never be staged or committed into a repo - no injector function or
+# unstage hook is needed. It only affects this machine's local view
+# (diffs, checkouts); it does not rewrite blobs for other people cloning
+# a given repo, so repos you maintain should still ship their own
+# committed .gitattributes for collaborators (see e.g. WSL-Setup, and the
+# per-repo .gitattributes fix in this very repo's history for why that's
+# still necessary on top of this).
+* text=auto eol=lf

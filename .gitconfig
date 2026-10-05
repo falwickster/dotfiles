@@ -17,6 +17,10 @@
 [core]
 	editor = hx
 	pager = delta
+	# ~/ expansion is resolved per-machine (USERPROFILE on Windows, $HOME on
+	# WSL/Linux), so this single tracked file covers both checkouts of this
+	# bare repo without any machine-specific path.
+	attributesFile = ~/.gitattributes_global
 
 [interactive]
 	diffFilter = delta --color-only
