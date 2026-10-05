@@ -44,7 +44,17 @@ __print_login_banner() {
 
     if command -v copilot >/dev/null 2>&1 || [[ -x "$HOME/.local/bin/copilot" ]]; then
         if [[ ! -f "$HOME/.azure-devops.local" ]]; then
-            __login_reminders+=("Azure DevOps org not configured for the Copilot MCP server -- run: cp ~/dotfiles/.azure-devops.local.example ~/.azure-devops.local && hx ~/.azure-devops.local, then re-run scripts/install-azure-devops-mcp.sh")
+            __login_reminders+=("Azure DevOps org(s) not configured for the Copilot MCP server -- run: cp ~/dotfiles/.azure-devops.local.example ~/.azure-devops.local && hx ~/.azure-devops.local, then re-run scripts/install-azure-devops-mcp.sh")
+        else
+            # File exists, but may still be an unedited copy of the
+            # example (only placeholder org names, or no org lines at
+            # all) -- catch that case too, not just a missing file.
+            local __ado_orgs
+            __ado_orgs="$(grep -v -E '^[[:space:]]*(#|$)' "$HOME/.azure-devops.local" 2>/dev/null \
+                | grep -v -E '^[[:space:]]*your-(ado|first-ado|second-ado|third-ado)-org-name[[:space:]]*$')"
+            if [[ -z "$__ado_orgs" ]]; then
+                __login_reminders+=("Azure DevOps org(s) left as placeholder in ~/.azure-devops.local -- edit it with your real org name(s), then re-run scripts/install-azure-devops-mcp.sh")
+            fi
         fi
     fi
 
