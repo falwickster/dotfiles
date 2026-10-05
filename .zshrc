@@ -50,7 +50,16 @@ __print_login_banner() {
 
     if command -v podman >/dev/null 2>&1; then
         if [[ ! -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/podman/podman.sock" ]]; then
-            __login_reminders+=("Podman API service not running -- run: brew services start podman")
+            if [[ ! -d "/run/user/$(id -u)" ]]; then
+                # No user systemd instance/D-Bus session yet -- `brew
+                # services start podman` fails with "Failed to connect to
+                # user scope bus via local transport" until lingering is
+                # enabled *and* WSL has been fully restarted (a new
+                # terminal/shell isn't enough).
+                __login_reminders+=("Podman API service not running (no systemd user session) -- run: sudo loginctl enable-linger \$(whoami), then from Windows PowerShell: wsl --shutdown, then reopen this terminal and run: brew services start podman")
+            else
+                __login_reminders+=("Podman API service not running -- run: brew services start podman")
+            fi
         fi
     fi
 
