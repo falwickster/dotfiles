@@ -3,6 +3,17 @@
 # feature set: fzf-powered Ctrl+R history search, ghost-text history
 # autosuggestions, and the same locked-down `dotfiles` sync helper.
 
+# --- PATH ----------------------------------------------------------------
+# User-local binaries (e.g. the standalone GitHub Copilot CLI installed by
+# install-copilot-cli.sh) land in ~/.local/bin, which isn't on PATH by
+# default on every distro/shell-init combo.
+if [ -d "$HOME/.local/bin" ]; then
+  case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) export PATH="$HOME/.local/bin:$PATH" ;;
+  esac
+fi
+
 # --- History -----------------------------------------------------------
 HISTFILE="$HOME/.zsh_history"
 HISTSIZE=50000
@@ -29,8 +40,6 @@ __print_login_banner() {
     if command -v gh >/dev/null 2>&1; then
         if ! timeout 3 gh auth status >/dev/null 2>&1; then
             __login_reminders+=("GitHub CLI not authenticated -- run: gh auth login")
-        elif ! timeout 3 gh auth status 2>&1 | grep -q "'copilot'"; then
-            __login_reminders+=("GitHub CLI missing Copilot scopes (needed by copilot_here) -- run: gh auth refresh -h github.com -s copilot,read:packages")
         fi
     fi
 
@@ -68,6 +77,13 @@ __print_login_banner() {
             else
                 __login_reminders+=("Podman API service not running -- run: brew services start podman")
             fi
+        elif ! podman secret inspect azure-devops-pat >/dev/null 2>&1; then
+            # No automated setup for this one on purpose - the PAT is
+            # pasted straight into Podman's secret store, by hand, so it
+            # never touches a dotfile, env var, or shell history. Stored
+            # for future use by whatever custom container image ends up
+            # consuming it (no copilot_here/MCP-specific encoding assumed).
+            __login_reminders+=("Azure DevOps PAT not stored -- run: podman secret create azure-devops-pat - (paste the PAT, then Ctrl-D)")
         fi
     fi
 
@@ -219,93 +235,3 @@ dotfiles() {
     fi
     git --git-dir="$HOME/.dotfiles.git" --work-tree="$HOME" "$@"
 }
-
-# --- copilot_here: sandboxed Copilot CLI container wrapper --------------
-# This block is pre-seeded here (rather than left for copilot_here's own
-# installer to inject at runtime) so the dotfiles bare-repo checkout in
-# install-dotfiles.sh never has to race it: if the installer created this
-# file's marker block first, the checkout would see an untracked ~/.zshrc
-# that doesn't match the tracked one and refuse to proceed. The content
-# below matches upstream's generated block byte-for-byte
-# (github.com/GordonBeeming/copilot_here), so when
-# scripts/install-copilot-here.sh runs the official installer afterwards,
-# it rewrites this exact same block - a no-op diff, so ~/.zshrc stays
-# clean under `dotfiles status`.
-# >>> copilot_here >>>
-# Ensure user bin directory is on PATH
-if [ -d "$HOME/.local/bin" ]; then
-  case ":$PATH:" in
-    *":$HOME/.local/bin:"*) ;;
-    *) export PATH="$HOME/.local/bin:$PATH" ;;
-  esac
-fi
-if [ -f "$HOME/.copilot_here.sh" ]; then
-  source "$HOME/.copilot_here.sh"
-fi
-# <<< copilot_here <<<
-
-# --- copilot_here: project-type convenience wrappers --------------------
-# Thin pass-through wrappers around copilot_here so common dev container
-# profiles don't need to be remembered/typed as flags every time.
-if command -v copilot_here >/dev/null 2>&1; then
-    # .NET -- base image's .NET variant ships all of .NET 8/9/10 SDKs.
-    copilot_dotnet() {
-        copilot_here --dotnet "$@"
-    }
-
-    # Azure Functions (TypeScript) - no official copilot_here image variant
-    # exists for this, so this points --image at Microsoft's own Azure
-    # Functions Node image (func CLI + Node 20 preinstalled) instead of the
-    # Node-only base image. NOTE: this custom image's compatibility with
-    # copilot_here's CLI-injection mechanism is unverified/untested -
-    # upstream only guarantees its own listed variants. Fall back to plain
-    # `copilot_here` (base Node image) if you hit issues.
-    copilot_azfunc_ts() {
-        copilot_here --image mcr.microsoft.com/azure-functions/node:4-node20-core-tools "$@"
-    }
-
-    # TypeScript - the base image already ships Node.js + npm,
-    # which is all Express + TypeScript development needs (tsc/ts-node
-    # installed per-project as usual), so this just aliases the base image.
-    copilot_ts() {
-        copilot_here "$@"
-    }
-
-    # Azure DevOps MCP tools inside the sandbox - see
-    # scripts/set-azure-devops-pat-secret.sh and
-    # scripts/generate-copilot-here-ado-mcp-config.sh. The host-side
-    # `--authentication azcli` MCP registration (install-azure-devops-mcp.sh)
-    # doesn't work in-container (no `az` binary, no ~/.azure token cache), so
-    # this injects a PAT-based MCP config directly into the containerized
-    # Copilot CLI session via copilot_here's own `--additional-mcp-config`
-    # flag, with the PAT itself supplied at runtime from a Podman secret
-    # (never mounted, never in an env file). Only works in standard
-    # (non-Airlock) mode: Airlock mode drops unrecognized SANDBOX_FLAGS like
-    # --secret.
-    __copilot_ado_run() {
-        local runner="$1"
-        shift
-        local ado_mcp_config="$HOME/.config/copilot_here/azure-devops-mcp.json"
-        local ado_secret="azure-devops-pat"
-
-        if [[ ! -f "$ado_mcp_config" ]]; then
-            echo "❌ ${ado_mcp_config} not found. Run: ./scripts/generate-copilot-here-ado-mcp-config.sh" >&2
-            return 1
-        fi
-        if command -v podman >/dev/null 2>&1 && ! podman secret inspect "$ado_secret" >/dev/null 2>&1; then
-            echo "❌ Podman secret '${ado_secret}' not found. Run: ./scripts/set-azure-devops-pat-secret.sh" >&2
-            return 1
-        fi
-
-        SANDBOX_FLAGS="--secret ${ado_secret},type=env,target=PERSONAL_ACCESS_TOKEN ${SANDBOX_FLAGS:-}" \
-            "$runner" --additional-mcp-config "@${ado_mcp_config}" "$@"
-    }
-
-    copilot_ado() {
-        __copilot_ado_run copilot_here "$@"
-    }
-
-    copilot_ado_yolo() {
-        __copilot_ado_run copilot_yolo "$@"
-    }
-fi
