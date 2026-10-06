@@ -91,6 +91,17 @@ __print_login_banner() {
         __login_reminders+=("Git identity not set -- run: cp ~/.gitconfig.local.example ~/.gitconfig.local && hx ~/.gitconfig.local")
     fi
 
+    # WSL-only: scripts/install-azure-devops-git-credentials.sh skips
+    # itself (rather than failing bootstrap) if Git for Windows/standalone
+    # GCM for Windows wasn't found yet on the Windows side. Non-WSL Linux
+    # needs no reminder here -- that branch just installs its own local
+    # brew cask, no external manual dependency.
+    if [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qi microsoft /proc/version 2>/dev/null; then
+        if [[ -z "$(git config --global --get credential.https://dev.azure.com.helper 2>/dev/null)" ]]; then
+            __login_reminders+=("Azure DevOps git credentials not configured -- install Git for Windows (or standalone GCM for Windows), then re-run: ./scripts/install-azure-devops-git-credentials.sh")
+        fi
+    fi
+
     if (( ${#__login_reminders[@]} > 0 )); then
         echo ""
         echo "⚠️  Manual setup still needed:"
