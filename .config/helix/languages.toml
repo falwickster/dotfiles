@@ -1,0 +1,13 @@
+# TypeScript and YAML use Helix's built-in defaults (typescript-language-server,
+# yaml-language-server), which are installed by Ubuntu-Setup's
+# scripts/install-language-servers.sh.
+#
+# C# is overridden to use csharp-ls (a modern, Roslyn-based language server
+# installed as a dotnet global tool) instead of Helix's default OmniSharp,
+# which has no simple cross-platform install path.
+[language-server.csharp-ls]
+command = "csharp-ls"
+
+[[language]]
+name = "c-sharp"
+language-servers = ["csharp-ls"]
