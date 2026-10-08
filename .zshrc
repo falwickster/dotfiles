@@ -148,6 +148,13 @@ compinit
 # them). Fall back to known static paths for older fzf, then to a
 # dependency-free hand-rolled widget as a last resort, so Ctrl+R always
 # works regardless of how fzf ended up installed.
+# Use fd (when installed) as fzf's file source: respects .gitignore, includes
+# hidden files, and powers Ctrl+T (file picker) and Alt+C (cd into dir).
+if command -v fd >/dev/null 2>&1; then
+    export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+    export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+fi
 if command -v fzf >/dev/null 2>&1; then
     if fzf --zsh >/dev/null 2>&1; then
         source <(fzf --zsh)
