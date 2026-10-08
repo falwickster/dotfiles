@@ -119,6 +119,34 @@ if [[ -o interactive ]]; then
     __print_login_banner
 fi
 
+# --- Azure Artifacts NuGet auth: PAT from Podman secret ------------------
+# Feeds the Azure Artifacts Credential Provider
+# (scripts/install-nuget-credential-provider.sh) through
+# VSS_NUGET_EXTERNAL_FEED_ENDPOINTS, with one endpoint per org listed in
+# ~/.azure-devops.local. The PAT is only read from the `azure-devops-pat`
+# Podman secret into this shell's environment, never written to disk.
+__export_nuget_feed_endpoints() {
+    command -v podman >/dev/null 2>&1 || return 0
+    command -v jq >/dev/null 2>&1 || return 0
+    [[ -f "$HOME/.azure-devops.local" ]] || return 0
+
+    local __pat __orgs
+    __pat="$(timeout 3 podman secret inspect --showsecret --format '{{.SecretData}}' azure-devops-pat 2>/dev/null)" || return 0
+    [[ -n "$__pat" ]] || return 0
+    __orgs="$(grep -v -E '^[[:space:]]*(#|$)' "$HOME/.azure-devops.local" \
+        | grep -v -E '^[[:space:]]*your-(ado|first-ado|second-ado|third-ado)-org-name[[:space:]]*$' \
+        | tr -d '[:blank:]')"
+    [[ -n "$__orgs" ]] || return 0
+
+    export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="$(printf '%s\n' "$__orgs" | jq -Rn --arg pat "$__pat" \
+        '{endpointCredentials: [inputs | select(length > 0) | {endpoint: ("https://pkgs.dev.azure.com/" + . + "/"), username: "VssSessionToken", password: $pat}]}' \
+        | jq -c .)"
+}
+if [[ -o interactive ]]; then
+    __export_nuget_feed_endpoints
+fi
+unfunction __export_nuget_feed_endpoints 2>/dev/null
+
 # --- Word-jump keybindings (Ctrl+Left/Right) -----------------------------
 # Without these, xterm-compatible terminals (e.g. WezTerm) send an
 # escape sequence for Ctrl+Left/Right that zsh doesn't bind to anything by
