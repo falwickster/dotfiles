@@ -87,6 +87,17 @@ __print_login_banner() {
         fi
     fi
 
+    # NuGet feed credentials for Azure Artifacts. Credentials are matched
+    # by source *name*, so they apply even when the feed itself is defined
+    # in a project-level nuget.config. Linux can't encrypt them, hence the
+    # clear-text flag (stored only in the user-level NuGet.Config).
+    if command -v dotnet >/dev/null 2>&1 && command -v podman >/dev/null 2>&1 \
+        && podman secret inspect azure-devops-pat >/dev/null 2>&1; then
+        if ! grep -qs "packageSourceCredentials" "$HOME/.nuget/NuGet/NuGet.Config"; then
+            __login_reminders+=("NuGet feed credentials not stored -- run: dotnet nuget update source <feed-name> --username VssSessionToken --password \"\$(podman secret inspect --showsecret --format '{{.SecretData}}' azure-devops-pat)\" --store-password-in-clear-text (use 'dotnet nuget add source <feed-url> -n <feed-name> ...' if the feed isn't in the user config yet)")
+        fi
+    fi
+
     if [[ ! -f "$HOME/.gitconfig.local" ]]; then
         __login_reminders+=("Git identity not set -- run: cp ~/.gitconfig.local.example ~/.gitconfig.local && hx ~/.gitconfig.local")
     fi
