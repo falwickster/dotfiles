@@ -87,30 +87,19 @@ __print_login_banner() {
         fi
     fi
 
-    # NuGet feed credentials for Azure Artifacts. Credentials are matched
-    # by source *name*, so they apply even when the feed itself is defined
-    # in a project-level nuget.config. Linux can't encrypt them, hence the
-    # clear-text flag (stored only in the user-level NuGet.Config).
-    if command -v dotnet >/dev/null 2>&1 && command -v podman >/dev/null 2>&1 \
-        && podman secret inspect azure-devops-pat >/dev/null 2>&1; then
-        if ! grep -qs "packageSourceCredentials" "$HOME/.nuget/NuGet/NuGet.Config"; then
-            __login_reminders+=("NuGet feed credentials not stored -- run: nuget-store-creds <feed-name> [feed-url]  (feed-name = source key in nuget.config; run it without args for help)")
-        fi
+    # NuGet: the credential provider only authenticates feeds listed in the
+    # user-level NuGet.Config (see __export_nuget_feed_endpoints below).
+    if command -v dotnet >/dev/null 2>&1 \
+        && ! grep -qs -i -E 'pkgs\.dev\.azure\.com|\.pkgs\.visualstudio\.com' "$HOME/.nuget/NuGet/NuGet.Config"; then
+        __login_reminders+=("No Azure Artifacts NuGet feed in user config -- run: dotnet nuget add source <feed-url> -n <feed-name>  (no credentials needed; PAT comes from the azure-devops-pat Podman secret)")
+    fi
+
+    if ! git config --global --get credential.https://dev.azure.com.helper >/dev/null 2>&1; then
+        __login_reminders+=("Azure DevOps git credential helper not configured -- run: ./scripts/install-azure-devops-git-credentials.sh")
     fi
 
     if [[ ! -f "$HOME/.gitconfig.local" ]]; then
         __login_reminders+=("Git identity not set -- run: cp ~/.gitconfig.local.example ~/.gitconfig.local && hx ~/.gitconfig.local")
-    fi
-
-    # WSL-only: scripts/install-azure-devops-git-credentials.sh skips
-    # itself (rather than failing bootstrap) if Git for Windows/standalone
-    # GCM for Windows wasn't found yet on the Windows side. Non-WSL Linux
-    # needs no reminder here -- that branch just installs its own local
-    # brew cask, no external manual dependency.
-    if [[ -n "${WSL_DISTRO_NAME:-}" ]] || grep -qi microsoft /proc/version 2>/dev/null; then
-        if [[ -z "$(git config --global --get credential.https://dev.azure.com.helper 2>/dev/null)" ]]; then
-            __login_reminders+=("Azure DevOps git credentials not configured -- install Git for Windows (or standalone GCM for Windows), then re-run: ./scripts/install-azure-devops-git-credentials.sh")
-        fi
     fi
 
     if (( ${#__login_reminders[@]} > 0 )); then
@@ -130,62 +119,31 @@ if [[ -o interactive ]]; then
     __print_login_banner
 fi
 
-# --- nuget-store-creds: store the Azure DevOps PAT for a NuGet feed ------
-# Updates the feed if it is already in the user-level NuGet.Config,
-# otherwise adds it (feed-url required). Matched by source *name*, so it
-# also works for feeds defined in a project-level nuget.config.
-nuget-store-creds() {
-    local __name="$1" __url="$2"
-    if [[ -z "$__name" ]]; then
-        cat <<'EOF'
-Usage: nuget-store-creds <feed-name> [feed-url]
-  feed-name  the source key, e.g. <add key="MyFeed" .../> in nuget.config
-             (see: dotnet nuget list source, or the repo's nuget.config)
-  feed-url   only needed if the feed is not yet in ~/.nuget/NuGet/NuGet.Config
-Stores the PAT from the `azure-devops-pat` Podman secret in clear text
-in the user-level NuGet.Config (Linux can't encrypt it).
-EOF
-        return 1
-    fi
-    command -v dotnet >/dev/null 2>&1 || { echo "dotnet not found" >&2; return 1; }
-    command -v podman >/dev/null 2>&1 || { echo "podman not found" >&2; return 1; }
-
-    local __pat
-    __pat="$(podman secret inspect --showsecret --format '{{.SecretData}}' azure-devops-pat 2>/dev/null)"
-    [[ -n "$__pat" ]] || { echo "Podman secret azure-devops-pat not found/empty" >&2; return 1; }
-
-    local __cfg="$HOME/.nuget/NuGet/NuGet.Config"
-    if grep -qs "key=\"$__name\"" "$__cfg"; then
-        dotnet nuget update source "$__name" --username VssSessionToken --password "$__pat" --store-password-in-clear-text
-    elif [[ -n "$__url" ]]; then
-        dotnet nuget add source "$__url" -n "$__name" --username VssSessionToken --password "$__pat" --store-password-in-clear-text
-    else
-        echo "'$__name' is not in $__cfg -- re-run with the feed URL: nuget-store-creds $__name <feed-url>" >&2
-        return 1
-    fi
-}
-
 # --- Azure Artifacts NuGet auth: PAT from Podman secret ------------------
 # Feeds the Azure Artifacts Credential Provider
 # (scripts/install-nuget-credential-provider.sh) through
-# VSS_NUGET_EXTERNAL_FEED_ENDPOINTS, with one endpoint per org listed in
-# ~/.azure-devops.local. The PAT is only read from the `azure-devops-pat`
-# Podman secret into this shell's environment, never written to disk.
+# VSS_NUGET_EXTERNAL_FEED_ENDPOINTS. The provider matches endpoints against
+# the FULL feed URL (no prefix matching), so one endpoint is emitted per
+# Azure Artifacts feed found in the user-level NuGet.Config (add feeds with
+# `dotnet nuget add source <url> -n <name>`). The PAT is only read from the
+# `azure-devops-pat` Podman secret into this shell's environment, never
+# written to disk.
 __export_nuget_feed_endpoints() {
     command -v podman >/dev/null 2>&1 || return 0
     command -v jq >/dev/null 2>&1 || return 0
-    [[ -f "$HOME/.azure-devops.local" ]] || return 0
+    local __cfg="$HOME/.nuget/NuGet/NuGet.Config"
+    [[ -f "$__cfg" ]] || return 0
 
-    local __pat __orgs
+    local __feeds
+    __feeds="$(grep -o -i -E 'https://[^"<]*(pkgs\.dev\.azure\.com|\.pkgs\.visualstudio\.com)/[^"<]*' "$__cfg" | sort -u)"
+    [[ -n "$__feeds" ]] || return 0
+
+    local __pat
     __pat="$(timeout 3 podman secret inspect --showsecret --format '{{.SecretData}}' azure-devops-pat 2>/dev/null)" || return 0
     [[ -n "$__pat" ]] || return 0
-    __orgs="$(grep -v -E '^[[:space:]]*(#|$)' "$HOME/.azure-devops.local" \
-        | grep -v -E '^[[:space:]]*your-(ado|first-ado|second-ado|third-ado)-org-name[[:space:]]*$' \
-        | tr -d '[:blank:]')"
-    [[ -n "$__orgs" ]] || return 0
 
-    export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="$(printf '%s\n' "$__orgs" | jq -Rn --arg pat "$__pat" \
-        '{endpointCredentials: [inputs | select(length > 0) | {endpoint: ("https://pkgs.dev.azure.com/" + . + "/"), username: "VssSessionToken", password: $pat}]}' \
+    export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="$(printf '%s\n' "$__feeds" | jq -Rn --arg pat "$__pat" \
+        '{endpointCredentials: [inputs | select(length > 0) | {endpoint: ., username: "VssSessionToken", password: $pat}]}' \
         | jq -c .)"
 }
 if [[ -o interactive ]]; then
