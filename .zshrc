@@ -133,7 +133,7 @@ fi
 # --- Azure Artifacts NuGet auth: PAT from Podman secret ------------------
 # Feeds the Azure Artifacts Credential Provider
 # (scripts/install-nuget-credential-provider.sh) through
-# VSS_NUGET_EXTERNAL_FEED_ENDPOINTS, with dev.azure.com and *.visualstudio.com endpoints per org listed in
+# VSS_NUGET_EXTERNAL_FEED_ENDPOINTS, with one endpoint per org listed in
 # ~/.azure-devops.local. The PAT is only read from the `azure-devops-pat`
 # Podman secret into this shell's environment, never written to disk.
 __export_nuget_feed_endpoints() {
@@ -150,7 +150,7 @@ __export_nuget_feed_endpoints() {
     [[ -n "$__orgs" ]] || return 0
 
     export VSS_NUGET_EXTERNAL_FEED_ENDPOINTS="$(printf '%s\n' "$__orgs" | jq -Rn --arg pat "$__pat" \
-        '{endpointCredentials: [inputs | select(length > 0) | ("https://pkgs.dev.azure.com/" + . + "/", "https://" + . + ".pkgs.visualstudio.com/") | {endpoint: ., username: "VssSessionToken", password: $pat}]}' \
+        '{endpointCredentials: [inputs | select(length > 0) | {endpoint: ("https://pkgs.dev.azure.com/" + . + "/"), username: "VssSessionToken", password: $pat}]}' \
         | jq -c .)"
 }
 if [[ -o interactive ]]; then
