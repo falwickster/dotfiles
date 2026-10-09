@@ -94,7 +94,7 @@ __print_login_banner() {
     if command -v dotnet >/dev/null 2>&1 && command -v podman >/dev/null 2>&1 \
         && podman secret inspect azure-devops-pat >/dev/null 2>&1; then
         if ! grep -qs "packageSourceCredentials" "$HOME/.nuget/NuGet/NuGet.Config"; then
-            __login_reminders+=("NuGet feed credentials not stored -- run: dotnet nuget update source <feed-name> --username VssSessionToken --password \"\$(podman secret inspect --showsecret --format '{{.SecretData}}' azure-devops-pat)\" --store-password-in-clear-text (use 'dotnet nuget add source <feed-url> -n <feed-name> ...' if the feed isn't in the user config yet)")
+            __login_reminders+=("NuGet feed credentials not stored -- run: nuget-store-creds <feed-name> [feed-url]  (feed-name = source key in nuget.config; run it without args for help)")
         fi
     fi
 
@@ -129,6 +129,41 @@ __print_login_banner() {
 if [[ -o interactive ]]; then
     __print_login_banner
 fi
+
+# --- nuget-store-creds: store the Azure DevOps PAT for a NuGet feed ------
+# Updates the feed if it is already in the user-level NuGet.Config,
+# otherwise adds it (feed-url required). Matched by source *name*, so it
+# also works for feeds defined in a project-level nuget.config.
+nuget-store-creds() {
+    local __name="$1" __url="$2"
+    if [[ -z "$__name" ]]; then
+        cat <<'EOF'
+Usage: nuget-store-creds <feed-name> [feed-url]
+  feed-name  the source key, e.g. <add key="MyFeed" .../> in nuget.config
+             (see: dotnet nuget list source, or the repo's nuget.config)
+  feed-url   only needed if the feed is not yet in ~/.nuget/NuGet/NuGet.Config
+Stores the PAT from the `azure-devops-pat` Podman secret in clear text
+in the user-level NuGet.Config (Linux can't encrypt it).
+EOF
+        return 1
+    fi
+    command -v dotnet >/dev/null 2>&1 || { echo "dotnet not found" >&2; return 1; }
+    command -v podman >/dev/null 2>&1 || { echo "podman not found" >&2; return 1; }
+
+    local __pat
+    __pat="$(podman secret inspect --showsecret --format '{{.SecretData}}' azure-devops-pat 2>/dev/null)"
+    [[ -n "$__pat" ]] || { echo "Podman secret azure-devops-pat not found/empty" >&2; return 1; }
+
+    local __cfg="$HOME/.nuget/NuGet/NuGet.Config"
+    if grep -qs "key=\"$__name\"" "$__cfg"; then
+        dotnet nuget update source "$__name" --username VssSessionToken --password "$__pat" --store-password-in-clear-text
+    elif [[ -n "$__url" ]]; then
+        dotnet nuget add source "$__url" -n "$__name" --username VssSessionToken --password "$__pat" --store-password-in-clear-text
+    else
+        echo "'$__name' is not in $__cfg -- re-run with the feed URL: nuget-store-creds $__name <feed-url>" >&2
+        return 1
+    fi
+}
 
 # --- Azure Artifacts NuGet auth: PAT from Podman secret ------------------
 # Feeds the Azure Artifacts Credential Provider
