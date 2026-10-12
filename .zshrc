@@ -14,6 +14,12 @@ if [ -d "$HOME/.local/bin" ]; then
   esac
 fi
 
+# --- Editor --------------------------------------------------------------
+# Helix is the editor for tools that honor $VISUAL/$EDITOR (e.g. Copilot
+# CLI's prompt editor, Ctrl+X Ctrl+E).
+export EDITOR=hx
+export VISUAL=hx
+
 # --- History -----------------------------------------------------------
 HISTFILE="$HOME/.zsh_history"
 HISTSIZE=50000

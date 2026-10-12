@@ -12,3 +12,7 @@ os:
 keybinding:
   files:
     openFile: '<disabled>'
+git:
+  paging:
+    colorArg: always
+    pager: delta --dark --paging=never
