@@ -100,7 +100,7 @@ __print_login_banner() {
         __login_reminders+=("No Azure Artifacts NuGet feed in user config -- run: dotnet nuget add source <feed-url> -n <feed-name>  (no credentials needed; PAT comes from the azure-devops-pat Podman secret)")
     fi
 
-    if ! git config --global --get credential.https://dev.azure.com.helper >/dev/null 2>&1; then
+    if ! git config --get credential.https://dev.azure.com.helper >/dev/null 2>&1; then
         __login_reminders+=("Azure DevOps git credential helper not configured -- run: ./scripts/install-azure-devops-git-credentials.sh")
     fi
 

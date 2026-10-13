@@ -14,7 +14,7 @@ Personal Windows dotfiles, managed as a [bare Git repository](https://www.atlass
    git --git-dir=$gitDir --work-tree=$env:USERPROFILE config --local status.showUntrackedFiles no
    git --git-dir=$gitDir --work-tree=$env:USERPROFILE checkout
    ```
-3. Once checked out, `Documents/PowerShell/Microsoft.PowerShell_profile.ps1` defines a `dotfiles` helper for everyday use. It's intentionally locked down to pull/sync subcommands only (`pull`, `fetch`, `merge`, `status`, `log`, `diff`) — see the TIP below for why.
+3. The Windows PowerShell profile is intentionally not tracked; day-to-day use lives in Ubuntu/WSL, where the `.zshrc` `dotfiles` helper is locked down to pull/sync subcommands only (`pull`, `fetch`, `merge`, `status`, `log`, `diff`) — see the TIP below for why.
 
 ## What's in here
 
@@ -28,4 +28,4 @@ Don't point an agent at your live home directory checkout. Instead:
 2. Let the agent make and commit changes there, then push to the remote.
 3. Back in your home directory, run `dotfiles pull` (or `fetch` + `merge`) to sync those changes in.
 
-The `dotfiles` command itself is restricted (in the PowerShell profile) to `pull`/`fetch`/`merge`/`status`/`log`/`diff` — it will refuse `add`, `commit`, `push`, etc. It exists solely to **pull/sync** changes into your home directory, never to author or commit changes directly there.
+The `dotfiles` command itself is restricted (in `.zshrc`) to `pull`/`fetch`/`merge`/`status`/`log`/`diff` — it will refuse `add`, `commit`, `push`, etc. It exists solely to **pull/sync** changes into your home directory, never to author or commit changes directly there.
