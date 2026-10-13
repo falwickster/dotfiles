@@ -1,8 +1,7 @@
 #!/bin/sh
 # Global commit-msg hook: rejects any commit that credits GitHub Copilot
 # (or any AI assistant) as a co-author/contributor. Installed for every
-# repo via `core.hooksPath` (see install-git-hooks.sh /
-# Install-GitHooks.ps1) rather than per-repo, so it can't be bypassed by
+# repo via `core.hooksPath` (set in the tracked .gitconfig) rather than per-repo, so it can't be bypassed by
 # just cloning a fresh repo.
 msg_file="$1"
 
