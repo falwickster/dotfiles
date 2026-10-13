@@ -18,8 +18,22 @@ if wezterm.config_builder then config = wezterm.config_builder() end
 -- Settings
 config.default_prog = { "pwsh" }
 
-config.color_scheme = "tokyonight_storm"
-config.window_background_opacity = 0.9
+-- Custom palette matching Helix's github_dark_high_contrast (WezTerm only
+-- ships the regular "GitHub Dark"). Colors follow GitHub Primer.
+config.color_schemes = {
+  ["GitHub Dark High Contrast"] = {
+    foreground = "#f0f3f6",
+    background = "#0a0c10",
+    cursor_bg = "#71b7ff",
+    cursor_fg = "#0a0c10",
+    cursor_border = "#71b7ff",
+    selection_bg = "#264f78",
+    selection_fg = "#f0f3f6",
+    ansi = { "#272b33", "#ff9492", "#26cd4d", "#f0b72f", "#71b7ff", "#cb9eff", "#39c5cf", "#d9dee3" },
+    brights = { "#4c5461", "#ffb1af", "#4ae168", "#f7c843", "#91cbff", "#dbb7ff", "#56d4dd", "#ffffff" },
+  },
+}
+config.color_scheme = "GitHub Dark High Contrast"
 
 -- Pinned explicitly (rather than relying on WezTerm's built-in fallback
 -- font) for consistently crisp rendering of Nerd Font glyphs (tmux status
@@ -88,13 +102,13 @@ config.status_update_interval = 1000
 config.tab_bar_at_bottom = false
 config.tab_max_width = 32
 
--- Colors for the retro tab bar, tuned to sit apart from the tokyonight-storm
+-- Colors for the retro tab bar, tuned to sit apart from the GitHub high-contrast
 -- pane background so tabs read as distinct "chips" rather than blending in.
 config.colors = {
   tab_bar = {
-    background = "#1f2335",
-    new_tab = { bg_color = "#1f2335", fg_color = "#565f89" },
-    new_tab_hover = { bg_color = "#292e42", fg_color = "#c0caf5" },
+    background = "#010409",
+    new_tab = { bg_color = "#010409", fg_color = "#9ea7b3" },
+    new_tab_hover = { bg_color = "#272b33", fg_color = "#f0f3f6" },
   },
 }
 
@@ -109,22 +123,22 @@ wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_wid
 
   if tab.is_active then
     return {
-      { Background = { Color = "#1f2335" } },
-      { Foreground = { Color = "#bb9af7" } },
+      { Background = { Color = "#010409" } },
+      { Foreground = { Color = "#71b7ff" } },
       { Text = SOLID_LEFT_ARROW },
-      { Background = { Color = "#bb9af7" } },
-      { Foreground = { Color = "#1f2335" } },
+      { Background = { Color = "#71b7ff" } },
+      { Foreground = { Color = "#010409" } },
       { Attribute = { Intensity = "Bold" } },
       { Text = " " .. title .. " " },
     }
   end
 
   return {
-    { Background = { Color = "#1f2335" } },
-    { Foreground = { Color = "#414868" } },
+    { Background = { Color = "#010409" } },
+    { Foreground = { Color = "#4c5461" } },
     { Text = SOLID_LEFT_ARROW },
-    { Background = { Color = "#292e42" } },
-    { Foreground = { Color = "#a9b1d6" } },
+    { Background = { Color = "#272b33" } },
+    { Foreground = { Color = "#d9dee3" } },
     { Text = " " .. title .. " " },
   }
 end)
@@ -132,7 +146,7 @@ end)
 wezterm.on("update-status", function(window, pane)
   -- Workspace name
   local stat = window:active_workspace()
-  local stat_color = "#f7768e"
+  local stat_color = "#ff9492"
 
   local basename = function(s)
     -- Nothing a little regex can't fix
@@ -175,7 +189,7 @@ wezterm.on("update-status", function(window, pane)
     -- https://wezfurlong.org/wezterm/config/lua/wezterm/nerdfonts.html
     { Text = wezterm.nerdfonts.md_folder .. "  " .. cwd },
     { Text = " | " },
-    { Foreground = { Color = "#e0af68" } },
+    { Foreground = { Color = "#f0b72f" } },
     { Text = wezterm.nerdfonts.fa_code .. "  " .. cmd },
     "ResetAttributes",
     { Text = " | " },

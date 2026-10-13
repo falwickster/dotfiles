@@ -31,15 +31,16 @@
 	navigate = true
 	line-numbers = true
 	# base16 maps syntax colors to the terminal's ANSI palette, so delta
-	# follows the WezTerm tokyonight_storm scheme instead of its own theme.
+	# follows the WezTerm GitHub Dark High Contrast scheme instead of its own theme.
 	syntax-theme = base16
-	minus-style = syntax "#37222c"
-	minus-emph-style = syntax "#713137"
-	plus-style = syntax "#20303b"
-	plus-emph-style = syntax "#2c5a66"
-	line-numbers-minus-style = "#db4b4b"
-	line-numbers-plus-style = "#449dab"
-	line-numbers-zero-style = "#3b4261"
+	# Only diff line backgrounds/line numbers are overridden; syntax stays base16.
+	minus-style = syntax "#3c1118"
+	minus-emph-style = syntax "#8e1519"
+	plus-style = syntax "#0f2d1a"
+	plus-emph-style = syntax "#196c2e"
+	line-numbers-minus-style = "#ff9492"
+	line-numbers-plus-style = "#26cd4d"
+	line-numbers-zero-style = "#4c5461"
 
 [merge]
 	conflictstyle = diff3

@@ -1,5 +1,5 @@
 # Set theme
-theme = "tokyonight_storm"
+theme = "github_dark_high_contrast"
 
 [editor]
 # Show line numbers (relative numbers are great for modal navigation)
