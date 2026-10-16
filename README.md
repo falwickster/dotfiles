@@ -6,7 +6,7 @@ Personal Windows dotfiles, managed as a [bare Git repository](https://www.atlass
 
 1. Clone this repo as a **bare** repo into your home directory:
    ```powershell
-   git clone --bare https://github.com/falwickster/dotfiles.git $env:USERPROFILE\.dotfiles.git
+   git clone --bare https://github.com/kjafra/dotfiles.git $env:USERPROFILE\.dotfiles.git
    ```
 2. Do the one-time setup (hide untracked files, then check out into your home directory) using raw `git` invocations with the same `--git-dir`/`--work-tree` flags. Back up any conflicting existing files first:
    ```powershell
